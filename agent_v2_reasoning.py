@@ -1,7 +1,13 @@
 import json
 import os
 from datetime import datetime
-from langchain_ollama import ChatOllama
+try:
+    # 尝试加载最新版的 Ollama 接口
+    from langchain_ollama import ChatOllama
+except (ImportError, AttributeError):
+    # 如果版本不匹配（如报 LangSmithParams 错误），回退到稳健的社区版接口
+    from langchain_community.chat_models import ChatOllama
+
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from langchain.agents import create_react_agent, AgentExecutor
