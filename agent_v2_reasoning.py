@@ -17,6 +17,8 @@ REACT_PROMPT = ChatPromptTemplate.from_template("""
 你是一个能够使用工具回答问题的智能体。请按以下格式思考和回答：
 
 Question: 用户的输入问题
+工具列表: {tools}
+
 Thought: 你应该总是思考你应该做什么
 Action: 要采取的行动，必须是 [{tool_names}] 之一
 Action Input: 行动的输入参数
