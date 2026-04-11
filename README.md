@@ -45,5 +45,4 @@ python agent_v2_reasoning.py
 python memory_optimizer.py
 ```
 
----
-*本项目专为 NLP 实习岗简历打造，重点展示对 Agent 推理、知识表示与工程落地能力的综合掌握。*
+
