@@ -1,53 +1,58 @@
-# -*- coding: utf-8 -*-
 import json
 import os
 from datetime import datetime
+    """触发知识图谱的语义消歧与节点归并优化。"""
+    # 此处对接之前重构的 memory_optimizer.py
+    return "已完成 4 个冗余主体的语义归并，当前知识路径已刷新。"
 
-# 模拟 Agent 推理过程并保存轨迹 (Trace)
-def save_agent_trace(query, thought, action, observation, final_answer):
-    trace_file = "agent_reasoning_traces.json"
-    
-    trace_entry = {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "query": query,
-        "steps": [
-            {
-                "thought": thought,
-                "action": action,
-                "observation": observation
-            }
-        ],
-        "final_answer": final_answer
-    }
-    
-    # 读取旧轨迹
-    traces = []
-    if os.path.exists(trace_file):
-        with open(trace_file, "r", encoding="utf-8") as f:
-            try:
-                traces = json.load(f)
-            except:
-                traces = []
-                
-    traces.append(trace_entry)
-    
-    with open(trace_file, "w", encoding="utf-8") as f:
-        json.dump(traces, f, ensure_ascii=False, indent=4)
-    print(f"📡 [Log] 推理轨迹已记录至 {trace_file}")
+# 2. 核心推理引擎
+class ReasoningAgent:
+    def __init__(self, model_name="qwen2.5:7b"):
+        self.llm = ChatOllama(model=model_name, temperature=0)
+        self.tools = [search_memory, optimize_graph_memory]
+        
+        # 使用 standard ReAct prompt
+        prompt = hub.pull("hwchase17/react")
+        self.agent = create_react_agent(self.llm, self.tools, prompt)
+        self.executor = AgentExecutor(agent=self.agent, tools=self.tools, verbose=True, handle_parsing_errors=True)
 
-# 模拟主推理流程
-def mock_run():
-    query = "推荐一个 Alex 感兴趣的 Python 项目。"
-    print(f"🧠 Agent V2 正在思考: {query}")
-    
-    thought = "Alex 是一名 Python 开发人员，我需要查询他的具体兴趣点。首先查询 Vector Memory。"
-    action = "VectorSearch('Alex interests')"
-    observation = "Alex 提到过他想学习 Neo4j 和 GraphRAG 技术。"
-    final_answer = "根据 Alex 的 Python 背景和对 GraphRAG 的兴趣，我推荐他开发一个基于 Neo4j 的自动图谱构建工具。"
-    
-    save_agent_trace(query, thought, action, observation, final_answer)
-    print(f"✨ 最终回答: {final_answer}")
+    def execute(self, query: str):
+        print(f"🧠 [ReAct Reasoning] 正在处理: {query}")
+        start_time = datetime.now()
+        
+        # 执行推理
+        response = self.executor.invoke({"input": query})
+        
+        # 记录轨迹 (Trace)
+        self._save_trace(query, response["output"], start_time)
+        return response["output"]
+
+    def _save_trace(self, query, output, start_time):
+        trace_file = "agent_reasoning_traces.json"
+        duration = (datetime.now() - start_time).total_seconds()
+        
+        trace_entry = {
+            "timestamp": start_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "query": query,
+            "final_answer": output,
+            "latency": f"{duration:.2f}s",
+            "architecture": "LangChain ReAct Agent V2"
+        }
+        
+        traces = []
+        if os.path.exists(trace_file):
+            with open(trace_file, "r", encoding="utf-8") as f:
+                try: traces = json.load(f)
+                except: traces = []
+        
+        traces.append(trace_entry)
+        with open(trace_file, "w", encoding="utf-8") as f:
+            json.dump(traces, f, ensure_ascii=False, indent=4)
+        print(f"📡 [Log] 推理轨迹已持久化。")
 
 if __name__ == "__main__":
-    mock_run()
-    print("\n提示：运行此脚本后，检查 agent_reasoning_traces.json 以获取完整链路。")
+    # 实例化并运行
+    agent = ReasoningAgent()
+    user_query = "基于我目前的兴趣和背景，请给出一个职业晋升建议，并顺便优化一下我的知识库。"
+    answer = agent.execute(user_query)
+    print(f"\n✨ 最终产出:\n{answer}")

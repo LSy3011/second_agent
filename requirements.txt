@@ -1,0 +1,18 @@
+# 核心业务依赖（适配Python 3.11，无版本冲突）
+mem0ai==1.0.4
+neo4j==5.28.3
+langchain-core==1.2.16
+langchain-community==0.4.1
+langchain-experimental==0.4.1
+langchain_ollama==1.0.1
+ollama==0.6.1
+qdrant-client==1.17.0
+
+# 辅助依赖（代码中用到的基础库）
+pydantic==2.12.5
+httpx==0.27.2
+protobuf==5.29.6
+sqlalchemy==2.0.47
+numpy==2.4.2
+shutilwhich==1.1.0
+tqdm==4.67.3
