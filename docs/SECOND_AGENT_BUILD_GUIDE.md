@@ -46,6 +46,37 @@ F:\second_agent
 
 建议使用 Python 3.11。
 
+### 4.1 DSW 服务器现有环境
+
+你当前服务器上已经有 Second Agent 的独立虚拟环境，可以直接复用：
+
+```bash
+cd /mnt/workspace/neo4j_agent_env/
+source bin/activate
+cd /mnt/workspace/neo4j_agent_env/second_agent/
+```
+
+建议拉取最新代码后按顺序验证：
+
+```bash
+git pull origin master
+cp .env.example .env  # 如果 .env 已存在，先人工对比后再改
+python health_check.py
+python check_neo4j.py
+python hybrid_agent_padding_final.py
+python agent_v2_reasoning.py
+```
+
+如果要重建本地向量库，再显式使用：
+
+```bash
+python hybrid_agent_padding_final.py --reset
+```
+
+关键原则：`neo4j_agent_env` 只跑 Second Agent，不要和 Paper Assistant 的虚拟环境混用。
+
+### 4.2 通用新环境
+
 ```bash
 cd /path/to/second_agent
 python -m venv .venv
