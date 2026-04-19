@@ -16,9 +16,15 @@ class MemoryOptimizer:
     def list_entities(self, limit=500):
         query = """
         MATCH (n)
-        WITH n, labels(n) AS labels
+        WITH n, labels(n) AS labels, keys(n) AS props
         WHERE size(labels) > 0
-        RETURN coalesce(n.id, n.name, n.title, n.text, toString(id(n))) AS entity_id,
+        RETURN CASE
+                 WHEN 'name' IN props THEN n.name
+                 WHEN 'id' IN props THEN n.id
+                 WHEN 'title' IN props THEN n.title
+                 WHEN 'text' IN props THEN n.text
+                 ELSE elementId(n)
+               END AS entity_id,
                labels[0] AS label,
                elementId(n) AS element_id
         LIMIT $limit
@@ -72,7 +78,13 @@ class MemoryOptimizer:
         WITH [left, right] AS nodes
         CALL apoc.refactor.mergeNodes(nodes, {properties: 'combine', mergeRels: true})
         YIELD node
-        RETURN coalesce(node.id, node.name, node.title, toString(id(node))) AS merged_id,
+        WITH node, keys(node) AS props
+        RETURN CASE
+                 WHEN 'name' IN props THEN node.name
+                 WHEN 'id' IN props THEN node.id
+                 WHEN 'title' IN props THEN node.title
+                 ELSE elementId(node)
+               END AS merged_id,
                labels(node) AS labels
         """
         with self.driver.session() as session:
@@ -119,10 +131,28 @@ class MemoryOptimizer:
     def analyze_paths(self, start_node, end_node):
         query = """
         MATCH (a), (b)
-        WHERE coalesce(a.id, a.name, a.title, toString(id(a))) = $start
-          AND coalesce(b.id, b.name, b.title, toString(id(b))) = $end
+        WITH a, b, keys(a) AS a_props, keys(b) AS b_props
+        WHERE CASE
+                WHEN 'name' IN a_props THEN a.name
+                WHEN 'id' IN a_props THEN a.id
+                WHEN 'title' IN a_props THEN a.title
+                ELSE elementId(a)
+              END = $start
+          AND CASE
+                WHEN 'name' IN b_props THEN b.name
+                WHEN 'id' IN b_props THEN b.id
+                WHEN 'title' IN b_props THEN b.title
+                ELSE elementId(b)
+              END = $end
         MATCH p = shortestPath((a)-[*..3]-(b))
-        RETURN [node IN nodes(p) | coalesce(node.id, node.name, node.title, toString(id(node)))] AS nodes,
+        RETURN [node IN nodes(p) |
+                 CASE
+                   WHEN 'name' IN keys(node) THEN node.name
+                   WHEN 'id' IN keys(node) THEN node.id
+                   WHEN 'title' IN keys(node) THEN node.title
+                   ELSE elementId(node)
+                 END
+               ] AS nodes,
                [rel IN relationships(p) | type(rel)] AS rels
         LIMIT 1
         """
