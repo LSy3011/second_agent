@@ -4,6 +4,9 @@ from difflib import SequenceMatcher
 from config import NEO4J_PASSWORD, NEO4J_URL, NEO4J_USER
 
 
+ENTITY_KEY_EXPR = "head([key IN ['name', 'id', 'title', 'text'] WHERE key IN keys({node})])"
+
+
 class MemoryOptimizer:
     def __init__(self, uri, user, password):
         from neo4j import GraphDatabase
@@ -16,14 +19,13 @@ class MemoryOptimizer:
     def list_entities(self, limit=500):
         query = """
         MATCH (n)
-        WITH n, labels(n) AS labels, keys(n) AS props
+        WITH n,
+             labels(n) AS labels,
+             head([key IN ['name', 'id', 'title', 'text'] WHERE key IN keys(n)]) AS entity_key
         WHERE size(labels) > 0
         RETURN CASE
-                 WHEN 'name' IN props THEN n.name
-                 WHEN 'id' IN props THEN n.id
-                 WHEN 'title' IN props THEN n.title
-                 WHEN 'text' IN props THEN n.text
-                 ELSE elementId(n)
+                 WHEN entity_key IS NULL THEN elementId(n)
+                 ELSE n[entity_key]
                END AS entity_id,
                labels[0] AS label,
                elementId(n) AS element_id
@@ -53,7 +55,7 @@ class MemoryOptimizer:
             left_norm = self._normalize(left["id"])
             if not left_norm:
                 continue
-            for right in entities[idx + 1:]:
+            for right in entities[idx + 1 :]:
                 right_norm = self._normalize(right["id"])
                 if not right_norm or left_norm == right_norm:
                     continue
@@ -78,12 +80,11 @@ class MemoryOptimizer:
         WITH [left, right] AS nodes
         CALL apoc.refactor.mergeNodes(nodes, {properties: 'combine', mergeRels: true})
         YIELD node
-        WITH node, keys(node) AS props
+        WITH node,
+             head([key IN ['name', 'id', 'title', 'text'] WHERE key IN keys(node)]) AS entity_key
         RETURN CASE
-                 WHEN 'name' IN props THEN node.name
-                 WHEN 'id' IN props THEN node.id
-                 WHEN 'title' IN props THEN node.title
-                 ELSE elementId(node)
+                 WHEN entity_key IS NULL THEN elementId(node)
+                 ELSE node[entity_key]
                END AS merged_id,
                labels(node) AS labels
         """
@@ -131,27 +132,23 @@ class MemoryOptimizer:
     def analyze_paths(self, start_node, end_node):
         query = """
         MATCH (a), (b)
-        WITH a, b, keys(a) AS a_props, keys(b) AS b_props
+        WITH a, b,
+             head([key IN ['name', 'id', 'title', 'text'] WHERE key IN keys(a)]) AS a_key,
+             head([key IN ['name', 'id', 'title', 'text'] WHERE key IN keys(b)]) AS b_key
         WHERE CASE
-                WHEN 'name' IN a_props THEN a.name
-                WHEN 'id' IN a_props THEN a.id
-                WHEN 'title' IN a_props THEN a.title
-                ELSE elementId(a)
+                WHEN a_key IS NULL THEN elementId(a)
+                ELSE a[a_key]
               END = $start
           AND CASE
-                WHEN 'name' IN b_props THEN b.name
-                WHEN 'id' IN b_props THEN b.id
-                WHEN 'title' IN b_props THEN b.title
-                ELSE elementId(b)
+                WHEN b_key IS NULL THEN elementId(b)
+                ELSE b[b_key]
               END = $end
         MATCH p = shortestPath((a)-[*..3]-(b))
         RETURN [node IN nodes(p) |
-                 CASE
-                   WHEN 'name' IN keys(node) THEN node.name
-                   WHEN 'id' IN keys(node) THEN node.id
-                   WHEN 'title' IN keys(node) THEN node.title
-                   ELSE elementId(node)
-                 END
+                 coalesce(
+                   node[head([key IN ['name', 'id', 'title', 'text'] WHERE key IN keys(node)])],
+                   elementId(node)
+                 )
                ] AS nodes,
                [rel IN relationships(p) | type(rel)] AS rels
         LIMIT 1
@@ -163,7 +160,7 @@ class MemoryOptimizer:
                     "start": start_node,
                     "end": end_node,
                     "path_found": False,
-                    "message": "未找到 3 跳内路径",
+                    "message": "No path found within 3 hops.",
                 }
             return {
                 "start": start_node,
@@ -179,8 +176,8 @@ def main():
     parser.add_argument("--threshold", type=float, default=0.86)
     parser.add_argument("--limit", type=int, default=500)
     parser.add_argument("--max-pairs", type=int, default=20)
-    parser.add_argument("--execute", action="store_true", help="真正执行 APOC mergeNodes；默认只 dry-run")
-    parser.add_argument("--path", nargs=2, metavar=("START", "END"), help="分析两个实体之间的最短路径")
+    parser.add_argument("--execute", action="store_true", help="execute APOC mergeNodes; default is dry-run")
+    parser.add_argument("--path", nargs=2, metavar=("START", "END"), help="analyze the shortest path")
     args = parser.parse_args()
 
     optimizer = MemoryOptimizer(NEO4J_URL, NEO4J_USER, NEO4J_PASSWORD)

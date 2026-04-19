@@ -13,6 +13,8 @@ except Exception:
     LangChainDeprecationWarning = DeprecationWarning
 
 warnings.filterwarnings("ignore", category=LangChainDeprecationWarning)
+warnings.filterwarnings("ignore", message=".*LangChain agents.*")
+warnings.filterwarnings("ignore", message=".*Chain.run.*")
 
 try:
     from langchain_ollama import ChatOllama
