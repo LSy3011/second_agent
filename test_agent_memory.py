@@ -2,6 +2,14 @@ import os
 import logging
 import ollama  # 必须导入这个库
 from mem0 import Memory
+from config import (
+    NEO4J_PASSWORD,
+    NEO4J_URL,
+    NEO4J_USER,
+    OLLAMA_EMBED_MODEL,
+    OLLAMA_LLM_MODEL,
+    SOURCE_EMBEDDING_DIM,
+)
 
 # ================= 🔧 开启调试日志 =================
 logging.basicConfig(level=logging.INFO) # 降噪，只看关键信息
@@ -31,9 +39,9 @@ print(">>> 💉 已注入 JSON 强制模式补丁")
 neo4j_config = {
     "provider": "neo4j",
     "config": {
-        "url": "bolt://localhost:7687",
-        "username": "neo4j",
-        "password": "password123456"
+        "url": NEO4J_URL,
+        "username": NEO4J_USER,
+        "password": NEO4J_PASSWORD,
     }
 }
 
@@ -41,7 +49,7 @@ neo4j_config = {
 llm_config = {
     "provider": "ollama",
     "config": {
-        "model": "qwen2.5:7b",
+        "model": OLLAMA_LLM_MODEL,
         "temperature": 0,
         "top_p": 0.1
     }
@@ -51,8 +59,8 @@ llm_config = {
 embedder_config = {
     "provider": "ollama",
     "config": {
-        "model": "bge-m3:latest",
-        "embedding_dims": 1024
+        "model": OLLAMA_EMBED_MODEL,
+        "embedding_dims": SOURCE_EMBEDDING_DIM,
     }
 }
 

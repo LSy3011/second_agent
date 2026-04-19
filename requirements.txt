@@ -17,3 +17,4 @@ sqlalchemy==2.0.47
 numpy<2.0.0
 shutilwhich==1.1.0
 tqdm==4.67.3
+python-dotenv>=1.0.0

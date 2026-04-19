@@ -1,0 +1,24 @@
+# Environment
+.env
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+
+# Notebook/cache
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Logs and local outputs
+*.log
+*.tmp
+
+# Local vector stores and generated traces
+my_agent_vector_db/
+agent_reasoning_traces.local.json
+

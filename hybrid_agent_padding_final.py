@@ -1,55 +1,49 @@
 import os
 import shutil
 import logging
+import argparse
+from pathlib import Path
 from mem0 import Memory
 from langchain_core.documents import Document
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_community.graphs import Neo4jGraph
 from langchain_community.chat_models import ChatOllama
-from mem0.embeddings.ollama import OllamaEmbedding
+from config import (
+    NEO4J_PASSWORD,
+    NEO4J_URL,
+    NEO4J_USER,
+    OLLAMA_EMBED_MODEL,
+    OLLAMA_LLM_MODEL,
+    TARGET_EMBEDDING_DIM,
+    VECTOR_DB_PATH,
+)
+from embedding_patch import install_ollama_embedding_padding_patch
 
 # ================= 1. 💉 修复版：维度填充补丁 =================
 
-print(">>> 1. 注入维度填充补丁 (1024 -> 1536)...")
-
-# 保存原始方法
-original_embed = OllamaEmbedding.embed
-
-# 🔧 修复点：加上 *args 和 **kwargs，不管 Mem0 传多少个参数，全收下！
-def patched_embed(self, text, *args, **kwargs):
-    # 1. 调用原始方法 (把所有参数都透传过去)
-    try:
-        vector = original_embed(self, text, *args, **kwargs)
-    except TypeError:
-        # 万一原始方法也不支持多参数，就只传 text
-        vector = original_embed(self, text)
-    
-    # 2. 维度填充逻辑 (Padding)
-    target_dim = 1536 # 伪装成 OpenAI 的维度
-    current_dim = len(vector)
-    
-    if current_dim < target_dim:
-        pad_width = target_dim - current_dim
-        # 补 0.0
-        padded_vector = vector + [0.0] * pad_width
-        return padded_vector
-    
-    return vector
-
-# 应用补丁
-OllamaEmbedding.embed = patched_embed
-print("   ✅ 补丁已应用：支持多参数调用。")
-
 # ================= 2. 配置与清理 =================
 
-NEO4J_URL = "bolt://localhost:7687"
-NEO4J_USER = "neo4j"
-NEO4J_PASSWORD = "password123456"
-VECTOR_DB_PATH = "./my_agent_vector_padding"
+def reset_vector_store(path):
+    resolved = path.resolve()
+    project_root = Path(__file__).resolve().parent
+    if project_root not in resolved.parents and resolved != project_root:
+        raise ValueError(f"拒绝删除项目目录外的路径: {resolved}")
+    if resolved.exists():
+        shutil.rmtree(resolved)
+        print(f"   🧹 已清理向量库: {resolved}")
 
-# 清理旧数据，保证全新开始
-if os.path.exists(VECTOR_DB_PATH):
-    shutil.rmtree(VECTOR_DB_PATH)
+parser = argparse.ArgumentParser(description="验证 Mem0 + Neo4j 混合记忆链路")
+parser.add_argument("--reset", action="store_true", help="运行前清理本地向量库")
+args = parser.parse_args()
+
+print(f">>> 1. 注入维度填充补丁 ({TARGET_EMBEDDING_DIM})...")
+if install_ollama_embedding_padding_patch():
+    print("   ✅ 补丁已应用：支持多参数调用和维度补齐。")
+else:
+    print("   ✅ 补丁已存在，跳过重复注入。")
+
+if args.reset:
+    reset_vector_store(VECTOR_DB_PATH)
 
 # ================= 3. 启动 Agent =================
 
@@ -62,33 +56,33 @@ try:
         "vector_store": {
             "provider": "qdrant",
             "config": {
-                "path": VECTOR_DB_PATH,
+                "path": str(VECTOR_DB_PATH),
                 "collection_name": "mem0"
             }
         },
         "llm": {
             "provider": "ollama",
-            "config": {"model": "qwen2.5:7b", "temperature": 0}
+            "config": {"model": OLLAMA_LLM_MODEL, "temperature": 0}
         },
         "embedder": {
             "provider": "ollama",
             "config": {
-                "model": "bge-m3:latest",
-                "embedding_dims": 1536 
+                "model": OLLAMA_EMBED_MODEL,
+                "embedding_dims": TARGET_EMBEDDING_DIM
             }
         }
     })
     print("   ✅ Mem0 (向量层) 就绪")
 
     # B. 初始化 LangChain
-    llm = ChatOllama(model="qwen2.5:7b", temperature=0, format="json")
+    llm = ChatOllama(model=OLLAMA_LLM_MODEL, temperature=0, format="json")
     llm_transformer = LLMGraphTransformer(llm=llm)
     graph = Neo4jGraph(url=NEO4J_URL, username=NEO4J_USER, password=NEO4J_PASSWORD)
     print("   ✅ LangChain + Neo4j (图谱层) 就绪")
 
 except Exception as e:
     print(f"❌ 初始化报错: {e}")
-    exit()
+    raise SystemExit(1)
 
 # ================= 4. 执行写入测试 =================
 

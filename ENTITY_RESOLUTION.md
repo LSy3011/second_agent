@@ -9,8 +9,9 @@
 ## 2. 解决方案：基于语义距离的实体合并
 本项目引入了自动化实体归并逻辑：
 1. **触发时机**：在 Agent 闲时（或定时任务）启动。
-2. **计算策略**：使用 Levenshtein 距离（编辑距离）或向量余弦相似度（Cosine Similarity）。
-3. **执行引擎**：调用 Neo4j APOC 插件的 `mergeNodes` 函数，将冗余节点的边（Relationships）自动重定向到主节点上。
+2. **计算策略**：当前代码使用名称规范化 + `SequenceMatcher` 做第一阶段候选召回，后续可扩展为向量余弦相似度（Cosine Similarity）和 LLM 二次判定。
+3. **安全策略**：默认 dry-run，只输出候选实体对和相似度，不修改图谱。
+4. **执行引擎**：只有显式传入 `--execute` 时，才调用 Neo4j APOC 插件的 `mergeNodes` 函数，将冗余节点的边（Relationships）自动重定向到主节点上。
 
 ## 3. 多跳推理 (Multi-hop Reasoning) 的应用
 通过 Cypher 的 `shortestPath` 或 `allShortestPaths` 进行路径分析。

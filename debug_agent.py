@@ -1,6 +1,14 @@
 import os
 import logging
 from mem0 import Memory
+from config import (
+    NEO4J_PASSWORD,
+    NEO4J_URL,
+    NEO4J_USER,
+    OLLAMA_EMBED_MODEL,
+    OLLAMA_LLM_MODEL,
+    SOURCE_EMBEDDING_DIM,
+)
 
 # ================= 🔧 开启调试日志 (关键) =================
 # 这会把所有隐藏的报错都打印出来
@@ -10,9 +18,9 @@ logging.basicConfig(level=logging.DEBUG)
 neo4j_config = {
     "provider": "neo4j",
     "config": {
-        "url": "bolt://localhost:7687",
-        "username": "neo4j",
-        "password": "password123456"
+        "url": NEO4J_URL,
+        "username": NEO4J_USER,
+        "password": NEO4J_PASSWORD,
     }
 }
 
@@ -20,7 +28,7 @@ neo4j_config = {
 llm_config = {
     "provider": "ollama",
     "config": {
-        "model": "qwen2.5:7b",
+        "model": OLLAMA_LLM_MODEL,
         "temperature": 0.1,
         "max_tokens": 2000, # 给大一点空间
         "top_p": 0.1        # 让模型更严谨，便于输出 JSON
@@ -31,8 +39,8 @@ llm_config = {
 embedder_config = {
     "provider": "ollama",
     "config": {
-        "model": "bge-m3:latest",
-        "embedding_dims": 1024
+        "model": OLLAMA_EMBED_MODEL,
+        "embedding_dims": SOURCE_EMBEDDING_DIM,
     }
 }
 

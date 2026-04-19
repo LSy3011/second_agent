@@ -1,8 +1,9 @@
 from neo4j import GraphDatabase
+from config import NEO4J_PASSWORD, NEO4J_URL, NEO4J_USER
 
 # 配置连接信息
-URI = "bolt://localhost:7687"
-AUTH = ("neo4j", "password123456")
+URI = NEO4J_URL
+AUTH = (NEO4J_USER, NEO4J_PASSWORD)
 
 def check_connection():
     try:
@@ -24,7 +25,7 @@ def check_connection():
         print(f"错误信息: {e}")
         print("\n排查建议：")
         print("1. 确保 VS Code 端口转发了 7687 端口")
-        print("2. 确保密码是 password123456 (如果没改过可能是 neo4j)")
+        print("2. 检查 NEO4J_URL、NEO4J_USER、NEO4J_PASSWORD 环境变量")
 
 if __name__ == "__main__":
     check_connection()

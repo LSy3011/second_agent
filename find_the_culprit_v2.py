@@ -1,6 +1,7 @@
 import os
 from mem0 import Memory
 import qdrant_client
+from config import OLLAMA_EMBED_MODEL, OLLAMA_LLM_MODEL, SOURCE_EMBEDDING_DIM
 
 # ================= 配置区域 =================
 # 还是用你期望的配置，看看它到底听不听话
@@ -21,13 +22,13 @@ try:
         },
         "llm": {
             "provider": "ollama",
-            "config": {"model": "qwen2.5:7b", "temperature": 0}
+            "config": {"model": OLLAMA_LLM_MODEL, "temperature": 0}
         },
         "embedder": {
             "provider": "ollama",
             "config": {
-                "model": "bge-m3:latest",
-                "embedding_dims": 1024
+                "model": OLLAMA_EMBED_MODEL,
+                "embedding_dims": SOURCE_EMBEDDING_DIM,
             }
         }
     })
@@ -36,7 +37,7 @@ try:
     # 2. 深入刺探 (Introspection)
     if not hasattr(mem0, 'vector_store'):
         print("❌ 无法找到 vector_store 属性")
-        exit()
+        raise SystemExit(1)
         
     vs = mem0.vector_store
     print(f"\n[证据 1] 向量存储对象类型: {type(vs)}")
