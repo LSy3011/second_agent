@@ -1,9 +1,18 @@
 import json
+import argparse
+import warnings
 from datetime import datetime
 
 from config import DEFAULT_USER_ID, NEO4J_PASSWORD, NEO4J_URL, NEO4J_USER, OLLAMA_LLM_MODEL, SKILLS_DIR, TRACE_FILE
 from memory_optimizer import MemoryOptimizer
-from memory_store import search_memory as search_vector_memory
+from memory_store import close_memory, search_memory as search_vector_memory
+
+try:
+    from langchain_core._api import LangChainDeprecationWarning
+except Exception:
+    LangChainDeprecationWarning = DeprecationWarning
+
+warnings.filterwarnings("ignore", category=LangChainDeprecationWarning)
 
 try:
     from langchain_ollama import ChatOllama
@@ -26,7 +35,7 @@ def use_skill(skill_name: str):
 
 
 class ReasoningAgent:
-    def __init__(self, model_name=OLLAMA_LLM_MODEL):
+    def __init__(self, model_name=OLLAMA_LLM_MODEL, verbose=False):
         self.llm = ChatOllama(model=model_name, temperature=0)
         self.tool_events = []
         self.tools = [
@@ -61,7 +70,7 @@ class ReasoningAgent:
             self.tools,
             self.llm,
             agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            verbose=True,
+            verbose=verbose,
             handle_parsing_errors=True,
         )
 
@@ -119,13 +128,15 @@ class ReasoningAgent:
         return output
 
     def execute(self, query: str):
-        print(f"[Legacy ReAct] handling query: {query}")
+        print("=== Second Agent 推理演示 ===")
+        print(f"任务: {query}")
         start_time = datetime.now()
         self.tool_events = []
 
         try:
             response = self.executor.run(query)
             self._save_trace(query, response, start_time, self.tool_events)
+            self.print_tool_summary()
             return response
         except Exception as exc:
             err_msg = str(exc)
@@ -156,15 +167,39 @@ class ReasoningAgent:
 
         traces.append(trace_entry)
         TRACE_FILE.write_text(json.dumps(traces, ensure_ascii=False, indent=4), encoding="utf-8")
-        print("[Log] reasoning trace persisted")
+        print(f"轨迹文件: {TRACE_FILE}")
+
+    def print_tool_summary(self):
+        if not self.tool_events:
+            print("工具调用: 无")
+            return
+
+        print("\n--- 工具调用摘要 ---")
+        for idx, event in enumerate(self.tool_events, start=1):
+            print(f"{idx}. {event['tool']}")
+            print(f"   输入: {event['input']}")
+            preview = event["output_preview"].replace("\n", "\n   ")
+            print(f"   输出预览: {preview}")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run the Second Agent reasoning demo")
+    parser.add_argument("--verbose", action="store_true", help="show raw LangChain ReAct trace")
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    agent = ReasoningAgent()
+    args = parse_args()
+    agent = ReasoningAgent(verbose=args.verbose)
     user_query = (
-        "Based on my Python, Neo4j, Agent, and RAG project background, "
-        "use the career-advancement skill to give AI application engineer career advice, "
-        "and optimize my knowledge graph if needed."
+        "请基于我目前 Python、Neo4j、Agent、RAG 项目背景，使用 career-advancement skill "
+        "给出 AI 应用工程师方向的职业晋升建议。请严格按照以下 5 个部分输出："
+        "1. 当前定位判断；2. 目标岗位匹配度；3. 最应该强化的 3 项能力；"
+        "4. 可以写进简历的 2 个项目亮点；5. 未来 30 天行动计划。"
+        "如果需要，请顺便做一次知识图谱 dry-run 优化检查。"
     )
-    answer = agent.execute(user_query)
-    print(f"\nFinal output:\n{answer}")
+    try:
+        answer = agent.execute(user_query)
+        print(f"\n=== 最终输出 ===\n{answer}")
+    finally:
+        close_memory()

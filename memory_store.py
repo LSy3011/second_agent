@@ -63,3 +63,59 @@ def search_memory(query, user_id=None, limit=5):
             score = None
         normalized.append({"memory": text, "score": score})
     return normalized
+
+
+def _close_known_clients(obj, seen=None, depth=0):
+    if obj is None or depth > 4:
+        return
+
+    if seen is None:
+        seen = set()
+
+    obj_id = id(obj)
+    if obj_id in seen:
+        return
+    seen.add(obj_id)
+
+    close = getattr(obj, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception:
+            pass
+
+    for attr in (
+        "vector_store",
+        "client",
+        "_client",
+        "qdrant_client",
+        "_qdrant_client",
+        "db",
+        "_db",
+    ):
+        try:
+            child = getattr(obj, attr, None)
+        except Exception:
+            child = None
+        _close_known_clients(child, seen=seen, depth=depth + 1)
+
+    try:
+        members = vars(obj)
+    except TypeError:
+        members = {}
+
+    for name, child in members.items():
+        lowered = name.lower()
+        if any(token in lowered for token in ("client", "qdrant", "vector", "store")):
+            _close_known_clients(child, seen=seen, depth=depth + 1)
+
+
+def close_memory():
+    """Close cached local memory clients before interpreter shutdown."""
+    try:
+        memory = get_memory()
+    except Exception:
+        memory = None
+
+    _close_known_clients(memory)
+    get_memory.cache_clear()
