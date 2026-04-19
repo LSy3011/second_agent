@@ -1,48 +1,112 @@
-# 🧠 Hybrid RAG Agent: 基于向量+图谱的双脑记忆系统 (V2 Advanced)
+# Second Agent
 
-> **全链路本地化 | 复杂推理 Agent | 具身记忆优化**
+Second Agent 是一个本地化长期记忆 Agent 系统，融合 Mem0/Qdrant 向量记忆、Neo4j 图谱记忆、LangChain 工具调用和 Skill 工作流。项目目标是让本地大模型不仅能回答问题，还能检索用户长期记忆、读取任务 Skill、执行图谱治理 dry-run，并保存推理轨迹。
 
-这是一个进阶版的 **Hybrid RAG** 智能体系统。在 V1 版本的混合检索基础上，V2 版本引入了 **ReAct 推理链** 和 **实体消歧归并** 技术，使其具备了更强的逻辑推理能力和知识库自愈能力。
+## 项目定位
 
-## 🌟 核心亮点 (V2 New Features)
+Second Agent 解决的是“Agent 如何拥有长期记忆、工具调用能力和可维护任务流程”的问题。
 
-### 1. 🧠 ReAct 复杂推理架构 (New!)
-引入了 **Reasoning-Action** 循环。Agent 不再只是简单的检索，而是会根据问题的复杂度，自主决定是查询向量记忆（偏好/性格）还是图谱记忆（硬性关系），并能进行多步推理。
-- 详见：`agent_v2_reasoning.py`
+它和 Paper Assistant 的分工是：
 
-### 2. 🕸️ 记忆消歧与路径分析 (New!)
-解决了知识图谱在自动化构建过程中产生的节点冗余问题，并通过 Cypher 路径算法提供可解释的推理链。
-- **实体归并**：利用语义距离自动合并相似实体。
-- **路径解释**：解释 Agent 为何得出该结论（逻辑溯源）。
-- 详见：`memory_optimizer.py` 和 `ENTITY_RESOLUTION.md`
+- Paper Assistant：沉淀论文/行业资料，提供可检索的领域知识服务。
+- Second Agent：沉淀用户画像与任务过程，负责工具选择、Skill 调用和个性化推理。
 
-### 3. 🛠️ 运行时热补丁 (Classic)
-保留了 V1 中著名的 **Zero-Padding Adapter**，完美解决本地 BGE-M3 (1024维) 与 Mem0 硬编码 OpenAI (1536维) 的维度冲突。
+## 已验证能力
 
-## 🏗️ 技术栈升级
-* **Reasoning**: LangChain (ReAct Agent)
-* **LLM**: Ollama (Qwen2.5-7B)
-* **Graph Database**: Neo4j + APOC Plugins
-* **Memory Management**: Mem0 + Custom Optimizer
+服务器验证结果：
 
-## 📂 项目结构
+- Ollama 模型可用：`qwen2.5:7b`、`bge-m3:latest`。
+- Neo4j 5.26.24 连接正常，APOC 插件可用。
+- Mem0/Qdrant 本地向量记忆可写入和检索。
+- Neo4j 图谱关系可写入和查询。
+- `career-advancement`、`resume-polisher`、`interview-coach`、`paper-digest` Skill 可识别。
+- Agent 推理链路、工具调用摘要和 trace 持久化可用。
+
+## 技术栈
+
+- Python
+- LangChain
+- Mem0
+- Qdrant local
+- Neo4j + APOC
+- Ollama
+- Qwen2.5-7B
+- BGE-M3
+- Skill workflow
+
+## 目录结构
+
 ```text
 .
-├── agent_v2_reasoning.py       # [核心] V2 版本 ReAct 推理智能体逻辑
-├── memory_optimizer.py         # [优化] 图谱实体归并与路径分析工具
-├── ENTITY_RESOLUTION.md        # [文档] 实体消歧与推理技术原理说明
-├── app.py                      # V1 版本 Streamlit Web 界面
-├── hybrid_agent_padding_final.py # V1 版本核心逻辑（含热补丁）
+├── agent_v2_reasoning.py          # ReAct Agent 推理入口
+├── hybrid_agent_padding_final.py  # Mem0 + Neo4j 混合记忆写入验证
+├── memory_store.py                # Mem0/Qdrant 记忆封装
+├── memory_optimizer.py            # Neo4j 图谱治理 dry-run 与路径分析
+├── embedding_patch.py             # BGE-M3 到目标维度的运行时适配
+├── health_check.py                # 环境健康检查
+├── check_neo4j.py                 # Neo4j 连接检查
+├── skills/                        # Skill 工作流说明
+├── docs/                          # 构建、服务器和扩展说明
+├── .env.example
+└── requirements.txt
 ```
 
-## 🚀 进阶体验
-运行 V2 推理 Agent：
+## 快速运行
+
+服务器已有虚拟环境时：
+
+```bash
+cd /mnt/workspace/neo4j_agent_env
+source bin/activate
+cd /mnt/workspace/neo4j_agent_env/second_agent
+```
+
+启动 Neo4j 和 Ollama 后检查：
+
+```bash
+python health_check.py
+python check_neo4j.py
+```
+
+运行 Agent 推理演示：
+
 ```bash
 python agent_v2_reasoning.py
 ```
-运行记忆优化器：
+
+运行混合记忆写入演示：
+
 ```bash
-python memory_optimizer.py
+python hybrid_agent_padding_final.py
 ```
 
+查询 Neo4j 图谱：
 
+```bash
+cypher-shell -u neo4j -p password123456 "MATCH (a)-[r]->(b) RETURN properties(a), type(r), properties(b) LIMIT 20;"
+```
+
+## 关键配置
+
+复制 `.env.example` 为 `.env` 后可调整：
+
+```env
+NEO4J_URL=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=password123456
+OLLAMA_LLM_MODEL=qwen2.5:7b
+OLLAMA_EMBEDDING_MODEL=bge-m3:latest
+SOURCE_EMBEDDING_DIM=1024
+TARGET_EMBEDDING_DIM=1536
+```
+
+## Skill 列表
+
+- `career-advancement`：职业晋升与 AI 应用工程师定位。
+- `resume-polisher`：简历项目包装。
+- `interview-coach`：面试问答准备。
+- `paper-digest`：论文解读任务。
+
+## 简历表述
+
+> 基于 Mem0 + Qdrant + Neo4j 构建本地化长期记忆 Agent，支持向量记忆检索、图谱关系写入、Skill 工具调用和推理轨迹持久化；解决本地 BGE-M3 embedding 维度适配、Neo4j/APOC 部署、LangChain 依赖冲突等工程问题，并在服务器完成健康检查、Agent 推理、图谱写入和 Skill 调用验证。

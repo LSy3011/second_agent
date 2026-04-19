@@ -1,23 +1,123 @@
-# 项目运行与数据分析指南 (Second Agent)
+# Second Agent 使用指南
 
-## 1. 快速运行脚本清单
+## 1. 服务器启动
 
-| 脚本名称 | 功能说明 | 运行命令 | 生成数据 |
-| :--- | :--- | :--- | :--- |
-| `agent_v2_reasoning.py` | **ReAct 推理链路测试** | `python agent_v2_reasoning.py` | `agent_reasoning_traces.json` |
-| `memory_optimizer.py` | 图谱自愈与消歧优化 | `python memory_optimizer.py` | 终端日志输出 |
-| `app.py` | Streamlit 交互界面 | `streamlit run app.py` | 交互式实时图谱 |
+```bash
+cd /mnt/workspace/neo4j_agent_env
+source bin/activate
+cd /mnt/workspace/neo4j_agent_env/second_agent
+```
 
-## 2. 数据产出与分析步骤
+启动 Neo4j：
 
-### 步骤 A：分析推理轨迹 (Traces)
-运行 `agent_v2_reasoning.py` 后，打开 `agent_reasoning_traces.json`：
-- 查看 `thought` 字段：Agent 是否正确识别了需要查询 Neo4j 还是向量库？
-- 查看 `observation` 字段：检索到的信息是否足以支撑 `final_answer`？
-- **面试点**：在面试时，你可以拿着这个 JSON 文件解释具体的 Agent 的决策链路（Case Study）。
+```bash
+neo4j start
+ss -lntp | grep 7687
+```
 
-### 步骤 B：解决维度冲突
-如果你直接运行 `mem0` 报错，请务必使用项目中的逻辑（含 `OllamaEmbedding.embed` 的 Monkey Patch），这是解决本地模型不兼容的核心技术亮点。
+启动或检查 Ollama：
 
-## 3. 上传与反馈
-运行产生的 `agent_reasoning_traces.json` 是非常有价值的“Badcase”来源。如果你发现回复不准确，请将该文件数据发给我，我会帮你调整 ReAct 的 Prompt 模版。
+```bash
+ollama list
+```
+
+## 2. 健康检查
+
+```bash
+python health_check.py
+python check_neo4j.py
+```
+
+理想状态：
+
+- Ollama 有 `qwen2.5:7b` 和 `bge-m3:latest`。
+- Neo4j 连接成功。
+- skills 目录包含 `career-advancement`、`resume-polisher`、`interview-coach`、`paper-digest`。
+
+## 3. Agent 推理演示
+
+```bash
+python agent_v2_reasoning.py
+```
+
+该脚本会展示：
+
+- Skill 调用。
+- 长期记忆检索。
+- 图谱治理 dry-run。
+- 推理轨迹保存到 `agent_reasoning_traces.json`。
+
+查看原始 LangChain ReAct 链：
+
+```bash
+python agent_v2_reasoning.py --verbose
+```
+
+## 4. 混合记忆写入演示
+
+```bash
+python hybrid_agent_padding_final.py
+```
+
+该脚本会验证：
+
+- Mem0/Qdrant 向量记忆写入。
+- Neo4j 图谱关系写入。
+- LLMGraphTransformer 关系抽取。
+- fallback 图谱写入。
+
+如果要重建本地向量库：
+
+```bash
+python hybrid_agent_padding_final.py --reset
+```
+
+## 5. Neo4j 验证命令
+
+检查 APOC：
+
+```bash
+cypher-shell -u neo4j -p password123456 "RETURN apoc.version();"
+```
+
+查看节点：
+
+```bash
+cypher-shell -u neo4j -p password123456 "MATCH (n) RETURN labels(n), properties(n) LIMIT 20;"
+```
+
+查看关系：
+
+```bash
+cypher-shell -u neo4j -p password123456 "MATCH (a)-[r]->(b) RETURN properties(a), type(r), properties(b) LIMIT 20;"
+```
+
+## 6. 图谱治理
+
+只做 dry-run，不修改数据库：
+
+```bash
+python memory_optimizer.py
+```
+
+确认候选实体合理后再执行合并：
+
+```bash
+python memory_optimizer.py --execute
+```
+
+分析两个实体的最短路径：
+
+```bash
+python memory_optimizer.py --path Alex Neo4j
+```
+
+## 7. 运行产物
+
+以下文件属于运行产物，不建议提交到 Git：
+
+- `agent_reasoning_traces.json`
+- `my_agent_vector_padding/`
+- `__pycache__/`
+
+服务器运行时会自动生成这些文件。

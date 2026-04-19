@@ -14,11 +14,13 @@ __pycache__/
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 
-# Logs and local outputs
+# Logs and temporary files
 *.log
 *.tmp
+nohup.out
 
 # Local vector stores and generated traces
+my_agent_vector_padding/
 my_agent_vector_db/
+agent_reasoning_traces.json
 agent_reasoning_traces.local.json
-
