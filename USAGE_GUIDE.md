@@ -32,7 +32,7 @@ python check_neo4j.py
 
 - Ollama 有 `qwen2.5:7b` 和 `bge-m3:latest`。
 - Neo4j 连接成功。
-- skills 目录包含 `career-advancement`、`resume-polisher`、`interview-coach`、`paper-digest`。
+- skills 目录包含 `knowledge-workflow`、`paper-digest`、`career-advancement`、`resume-polisher`、`interview-coach`。
 
 ## 3. Agent 推理演示
 
@@ -42,7 +42,7 @@ python agent_v2_reasoning.py
 
 该脚本会展示：
 
-- Skill 调用。
+- Skill 调用，其中 `knowledge-workflow` 是默认企业知识助手验证场景，求职/面试类 Skill 作为可选样例。
 - 长期记忆检索。
 - 图谱治理 dry-run。
 - 推理轨迹保存到 `agent_reasoning_traces.json`。

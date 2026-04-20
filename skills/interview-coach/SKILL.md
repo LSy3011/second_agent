@@ -1,11 +1,12 @@
 ---
 name: interview-coach
-description: Use when the agent needs to prepare AI application engineer interviews, generate likely questions, simulate follow-up questions, or build answer frameworks from user projects and target job requirements.
+description: Optional validation skill. Use when the agent needs to prepare technical interviews, generate likely questions, simulate follow-up questions, or build answer frameworks from user projects and target requirements.
 ---
 
 # Interview Coach
 
-Use this workflow to prepare structured interview answers from user projects.
+Use this workflow to prepare structured technical Q&A from user projects.
+This skill is a validation example for task workflows, not the core product scenario.
 
 ## Inputs
 
@@ -30,4 +31,3 @@ Return:
 - Suggested answer outline for each question.
 - 3 deeper follow-up chains.
 - A final checklist of facts to verify.
-

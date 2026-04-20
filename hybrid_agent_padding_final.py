@@ -51,7 +51,7 @@ DEMO_GRAPH_RELATIONSHIPS = [
 
 DEMO_TEXTS = [
     "Alex is a Python Developer who uses Neo4j for memory graph reasoning.",
-    "Second Agent uses Mem0, Qdrant, and Neo4j to support career planning.",
+    "Second Agent uses Mem0, Qdrant, and Neo4j to support enterprise knowledge workflows.",
 ]
 
 

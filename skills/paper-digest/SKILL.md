@@ -11,7 +11,7 @@ Use this workflow to convert papers into reusable research notes.
 
 - Paper title, PDF path, or research question.
 - Optional Paper Assistant MCP tools: paper_search, paper_ask, graph_neighbors.
-- User goal, such as project design, interview preparation, or literature review.
+- User goal, such as project design, technical research, internal documentation, or literature review.
 
 ## Workflow
 
@@ -19,7 +19,7 @@ Use this workflow to convert papers into reusable research notes.
 2. Call Paper Assistant tools if available.
 3. Extract problem, method, experiment setup, result, limitation, and reusable idea.
 4. Compare related papers by method, metric, dataset, and engineering implication.
-5. Connect the paper to the user's project or interview story.
+5. Connect the paper to the user's project, architecture decision, or technical research task.
 
 ## Output
 
@@ -29,5 +29,4 @@ Return:
 - Method breakdown.
 - Key claims and evidence.
 - Limitations.
-- Reusable project/interview talking points.
-
+- Reusable project or architecture talking points.

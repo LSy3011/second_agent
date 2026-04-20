@@ -2,11 +2,13 @@
 
 ## Purpose
 
-Generate practical career advancement advice from a user's background, interests,
-project experience, and target role.
+Generate practical career development advice from a user's background, interests,
+project experience, and target role. This is an optional validation skill for
+personal growth workflows, not the core product background of Second Agent.
 
 ## Best For
 
+- Career development validation scenarios
 - AI application engineer positioning
 - Resume project packaging
 - Agent, RAG, knowledge graph, MCP, and Skill workflow planning

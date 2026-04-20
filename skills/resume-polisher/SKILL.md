@@ -1,11 +1,12 @@
 ---
 name: resume-polisher
-description: Use when the agent needs to rewrite project experience, produce resume bullets, tailor AI application engineer resumes, or prepare project talking points based on user memory and target job requirements.
+description: Optional validation skill. Use when the agent needs to rewrite project experience, produce resume bullets, or prepare project talking points based on user memory and target requirements.
 ---
 
 # Resume Polisher
 
-Use this workflow to turn user memory and project facts into resume-ready project descriptions.
+Use this workflow to turn user memory and project facts into concise project descriptions.
+This skill is a personal productivity example, not the default product scenario.
 
 ## Inputs
 
@@ -17,7 +18,7 @@ Use this workflow to turn user memory and project facts into resume-ready projec
 
 1. Identify the target role requirements.
 2. Extract project background, technical stack, engineering difficulty, and personal contribution.
-3. Write resume bullets in Chinese first.
+3. Write project bullets in Chinese first.
 4. Use action verbs and concrete engineering details.
 5. Add interview talking points using Problem, Solution, Difficulty, Result.
 6. Avoid unverified metrics, fake production scale, or exaggerated ownership.
@@ -29,4 +30,3 @@ Return:
 - 3 to 5 resume bullets.
 - A 60-second project pitch.
 - 5 likely interviewer follow-up questions.
-

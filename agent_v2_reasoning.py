@@ -61,9 +61,10 @@ class ReasoningAgent:
                 name="UseSkill",
                 func=self._use_skill,
                 description=(
-                    "Read a task Skill instruction. Use this for career advancement, resume polishing, "
-                    "interview coaching, and paper digest tasks. Input must be a skill directory name, "
-                    "such as career-advancement, resume-polisher, interview-coach, or paper-digest."
+                    "Read a task Skill instruction. Use this for enterprise knowledge workflows, "
+                    "paper digest, career advancement, resume polishing, and interview coaching tasks. "
+                    "Input must be a skill directory name, such as knowledge-workflow, paper-digest, "
+                    "career-advancement, resume-polisher, or interview-coach."
                 ),
             ),
         ]
@@ -194,10 +195,10 @@ if __name__ == "__main__":
     args = parse_args()
     agent = ReasoningAgent(verbose=args.verbose)
     user_query = (
-        "请基于我目前 Python、Neo4j、Agent、RAG 项目背景，使用 career-advancement skill "
-        "给出 AI 应用工程师方向的职业晋升建议。请严格按照以下 5 个部分输出："
-        "1. 当前定位判断；2. 目标岗位匹配度；3. 最应该强化的 3 项能力；"
-        "4. 可以写进简历的 2 个项目亮点；5. 未来 30 天行动计划。"
+        "请基于当前 Paper Assistant 与 Second Agent 的能力，使用 knowledge-workflow skill "
+        "设计一个面向企业研发团队的本地化知识助手工作流。请严格按照以下 6 个部分输出："
+        "1. 业务场景与用户；2. 知识服务设计；3. 记忆与个性化设计；"
+        "4. Tool/MCP 集成计划；5. Skill 工作流设计；6. 可靠性与评估清单。"
         "如果需要，请顺便做一次知识图谱 dry-run 优化检查。"
     )
     try:
